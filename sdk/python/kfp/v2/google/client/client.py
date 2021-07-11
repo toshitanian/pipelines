@@ -352,6 +352,7 @@ class AIPlatformClient(object):
       pipeline_root: Optional[str] = None,
       parameter_values: Optional[Mapping[str, Any]] = None,
       service_account: Optional[str] = None,
+      service_account_to_call_ai_platform: Optional[str] = None,
     ) -> dict:
     """Creates schedule for compiled pipeline file.
 
@@ -376,6 +377,9 @@ class AIPlatformClient(object):
       pipeline_root: Optionally the user can override the pipeline root
         specified during the compile time.
       service_account: The service account that the pipeline workload runs as.
+      service_account_to_call_ai_platform: The service account that
+        the proxy cloud function uses to call AI platform endpoint.
+        If not specified, the functions uses the App Engine default service account.
 
     Returns:
       Created Google Cloud Scheduler Job object dictionary.
@@ -388,4 +392,6 @@ class AIPlatformClient(object):
         time_zone=time_zone,
         parameter_values=parameter_values,
         pipeline_root=pipeline_root,
-        service_account=service_account)
+        service_account=service_account,
+        service_account_to_call_ai_platform=service_account_to_call_ai_platform
+    )

@@ -46,6 +46,7 @@ def create_from_pipeline_file(
     parameter_values: Optional[Mapping[str, Any]] = None,
     pipeline_root: Optional[str] = None,
     service_account: Optional[str] = None,
+    service_account_to_call_ai_platform: Optional[str] = None,
 ):
   """Creates schedule for compiled pipeline file.
 
@@ -72,6 +73,9 @@ def create_from_pipeline_file(
     pipeline_root: Optionally the user can override the pipeline root
       specified during the compile time.
     service_account: The service account that the pipeline workload runs as.
+    service_account_to_call_ai_platform: The service account that
+      the proxy cloud function uses to call AI platform endpoint.
+      If not specified, the functions uses the App Engine default service account.
 
   Returns:
     Created Google Cloud Scheduler Job object dictionary.
@@ -84,6 +88,7 @@ def create_from_pipeline_file(
   proxy_function_url = _get_proxy_cloud_function_endpoint(
       project_id=project_id,
       region=region,
+      service_account_to_call_ai_platform=service_account_to_call_ai_platform,
   )
 
   pipeline_dict = json.loads(pipeline_text)
@@ -236,6 +241,7 @@ def _create_or_get_cloud_function(
     project_id: str,
     region: str,
     runtime: str = 'python37',
+    service_account_to_call_ai_platform: Optional[str] = None,
 ):
   """Creates Google Cloud Function."""
   functions_api = _get_cloud_functions_api()
@@ -289,6 +295,8 @@ def _create_or_get_cloud_function(
       'httpsTrigger': {},
       'runtime': runtime,
   }
+  if service_account_to_call_ai_platform is not None:
+    request_body["serviceAccountEmail"] = service_account_to_call_ai_platform
 
   try:
     functions_api.create(
@@ -352,6 +360,7 @@ def _enable_required_apis(project_id: str,):
 def _get_proxy_cloud_function_endpoint(
     project_id: str,
     region: str = 'us-central1',
+    service_account_to_call_ai_platform: Optional[str] = None,
 ):
   """Sets up a proxy Cloud Function."""
   function_source_path = (
@@ -368,6 +377,8 @@ def _get_proxy_cloud_function_endpoint(
       file_data={
           'main.py': function_source,
           'requirements.txt': 'google-api-python-client>=1.7.8,<2',
-      })
+      },
+      service_account_to_call_ai_platform=service_account_to_call_ai_platform
+  )
   endpoint_url = function_dict['httpsTrigger']['url']
   return endpoint_url
